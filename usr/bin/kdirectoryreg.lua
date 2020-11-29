@@ -1,0 +1,1 @@
+require("kdirectory").registerSelf(nil)

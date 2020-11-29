@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+exec >bootstrap.lua
+for lib in knet kinternet; do
+  echo "local function _$lib()"
+  sed 's/^/  /' usr/lib/$lib.lua
+  echo "end  -- local function _$lib"
+  echo "package.loaded.$lib = _$lib()"
+  echo
+done
+cat usr/bin/ksetup.lua

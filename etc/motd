@@ -1,0 +1,3 @@
+kos = require("kos")
+
+io.write("KOMI OS : ", kos.getHostname() or "<unknown hostname>", "\n\n")

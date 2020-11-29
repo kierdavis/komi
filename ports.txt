@@ -1,0 +1,4 @@
+10: kinternetgw
+11: kdirectorysrv
+
+32768: beginning of ephemeral ports
