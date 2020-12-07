@@ -72,9 +72,6 @@ local manifest = {
   -- Configuration management script
   { path = "/usr/bin/ksetup.lua" },
 
-  -- Script to register to the directory
-  { path = "/usr/bin/kdirectoryreg" },
-
   -- Script to generate message-of-the-day
   { path = "/etc/motd" },
 
