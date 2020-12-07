@@ -32,8 +32,11 @@ local function _knet()
     checkArg(1, addr, "string")
     checkArg(2, port, "number")
     checkArg(3, message, "table")
-    --component.modem.send(addr, port, serialization.serialize(message))
-    component.modem.broadcast(port, serialization.serialize(message))
+    if addr == "broadcast" then
+      component.modem.broadcast(port, serialization.serialize(message))
+    else
+      component.modem.send(addr, port, serialization.serialize(message))
+    end
   end
   
   knet.handlers = {}
