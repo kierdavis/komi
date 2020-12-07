@@ -5,10 +5,11 @@ if not filesystem.isDirectory(parent) then
   filesystem.makeDirectory(parent)
 end
 
-local klog = {}
-klog.file = io.open(path, "w")
-function klog.print(msg)
-  klog.file:write(msg .. "\n")
+return function(msg)
+  local f, err = io.open(path, "a")
+  if not f then
+    error(err)
+  end
+  f:write(tostring(msg) .. "\n")
+  f:close()
 end
-
-return setmetatable(klog, { __call = klog.print })
