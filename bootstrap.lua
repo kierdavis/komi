@@ -185,76 +185,79 @@ local function _kinternet()
     local event = require("event")
     local knet = require("knet")
   
-    local status, reason, err, closed
-    local chunkQueue = {}
-    local chunkQueueHead = 1
-    local chunkQueueTail = 1
-    local nextSeqNum = 1
+    local sharedState = {
+      chunkQueue = {},
+      chunkQueueHead = 1,
+      chunkQueueTail = 1,
+      nextSeqNum = 1,
+    }
   
-    local function close(localPort)
-      if not closed then
-        knet.unlisten(localPort)
-        closed = true
+    local function close()
+      if sharedState.localPort ~= nil then
+        knet.unlisten(sharedState.localPort)
+        sharedState.localPort = nil
+        --require("klog")("[kinternet.openRemote] closed")
       end
     end
   
-    local localPort = knet.listenEphemeral(function(localPort, message)
+    sharedState.localPort = knet.listenEphemeral(function(_localPort, message)
+      --require("klog")("[kinternet.openRemote] recved " .. tostring(message.seqNum))
       if closed then
         return
       end
-      if message.seqNum ~= nextSeqNum then
-        err = "bad seqNum (expected " .. tostring(nextSeqNum) .. ", got " .. tostring(message.seqNum) .. ")"
-        close(localPort)
+      if message.seqNum ~= sharedState.nextSeqNum then
+        sharedState.error = "bad seqNum (expected " .. tostring(sharedState.nextSeqNum) .. ", got " .. tostring(message.seqNum) .. ")"
+        close()
       else
-        nextSeqNum = nextSeqNum + 1
+        sharedState.nextSeqNum = sharedState.nextSeqNum + 1
         if message.status then
-          status = message.status
-          reason = message.reason
+          sharedState.status = message.status
+          sharedState.reason = message.reason
         elseif message.chunk then
-          chunkQueue[chunkQueueTail] = message.chunk
-          chunkQueueTail = chunkQueueTail + 1
+          sharedState.chunkQueue[sharedState.chunkQueueTail] = message.chunk
+          sharedState.chunkQueueTail = sharedState.chunkQueueTail + 1
         elseif message.finished then
-          close(localPort)
+          close()
         elseif message.error then
-          err = message.error
+          sharedState.error = message.error
         end
       end
-      event.push("kinternet_remote_fragment", localPort)
+      event.push("kinternet_remote_fragment", sharedState.localPort)
     end)
   
     req.replyAddr = require("component").modem.address
-    req.replyPort = localPort
-    knet.send("1dad", 10, req)
+    req.replyPort = sharedState.localPort
+    knet.send("broadcast", 10, req)
+    --require("klog")("[kinternet.openRemote] sent")
   
-    local function waitForFragment()
-      if err ~= nil then
-        error(err)
+    local function waitForEvent()
+      if sharedState.error ~= nil then
+        error(sharedState.error)
       end
       event.pullFiltered(nil, function(eventName, eventLocalPort)
-        return eventName == "kinternet_remote_fragment" and eventLocalPort == localPort
+        return eventName == "kinternet_remote_fragment" and eventLocalPort == sharedState.localPort
       end)
-      if err ~= nil then
-        error(err)
+      --require("klog")("[kinternet.openRemote] pulled")
+      if sharedState.error ~= nil then
+        error(sharedState.error)
       end
     end
-    
+  
     return {
       getStatus = function()
-        while not (status or closed) do
-          waitForFragment()
+        while not sharedState.status and sharedState.localPort do
+          waitForEvent()
         end
-        if closed then
+        if not sharedState.status then
           error("connection closed before receiving status")
         end
-        return status, reason
+        return sharedState.status, sharedState.reason
       end,
       body = function()
-        while not (chunkQueueHead < chunkQueueTail or closed) do
-          waitForFragment()
+        while not (sharedState.chunkQueueHead < sharedState.chunkQueueTail) and sharedState.localPort do
+          waitForEvent()
         end
-        if closed then
-          return nil
-        else
+        if sharedState.chunkQueueHead < sharedState.chunkQueueTail then
           local chunk = chunkQueue[chunkQueueHead]
           chunkQueue[chunkQueueHead] = nil
           chunkQueueHead = chunkQueueHead + 1
@@ -262,9 +265,11 @@ local function _kinternet()
             error("didn't expect chunk to be nil")
           end
           return chunk
+        else
+          return nil
         end
       end,
-      close = function() close(localPort) end,
+      close = close,
     }
   end
   
