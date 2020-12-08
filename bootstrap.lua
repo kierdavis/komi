@@ -122,7 +122,6 @@ local function _knet()
     checkArg(3, timeout, "number", "nil")
     checkArg(4, reqMessage, "table")
     local localPort = knet.listenEphemeral(function(localPort, respMessage)
-      io.stderr:write("[D] ", require("serialization").serialize(respMessage), "\n")
       event.push("knet_response", localPort, respMessage)
     end)
     reqMessage.replyAddr = component.modem.address
@@ -131,7 +130,6 @@ local function _knet()
     local a, b, respMessage = event.pullFiltered(timeout, function(eventName, eventLocalPort)
       return eventName == "knet_response" and eventLocalPort == localPort
     end)
-    io.stderr:write("[D] ", tostring(a), " ", tostring(b), " ", tostring(respMessage), "\n")
     knet.unlisten(localPort)
     if not respMessage then
       error("request timed out")
