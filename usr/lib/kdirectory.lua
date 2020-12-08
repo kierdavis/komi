@@ -1,5 +1,7 @@
 local kdirectory = {}
 
+kdirectory.port = 11
+
 if require("filesystem").exists("/etc/rc.d/kdirectorysrv.lua") then
   -- Local
 
@@ -24,7 +26,7 @@ else
   local function doRequest(req, timeout)
     checkArg(1, req, "table")
     checkArg(2, timeout, "number", "nil")
-    local resp = knet.request(kdirectory.serverAddr, 11, timeout, req)
+    local resp = require("knet").request(kdirectory.serverAddr, kdirectory.port, timeout, req)
     if resp.serverAddr then
       kdirectory.serverAddr = resp.serverAddr
     end

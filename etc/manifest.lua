@@ -29,9 +29,7 @@ local services = {
   },
   kdirectorysrv = {
     enabled = hostname == "infra1",
-    config = {
-      listenPort = 11,
-    },
+    config = {},
     watch = {"/usr/lib/kdirectory.lua", "/usr/lib/knet.lua"},
   },
 }

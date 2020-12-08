@@ -30,11 +30,11 @@ local function handleRequest(req)
 end
 
 function start()
-  knet.serve(args.listenPort, handleRequest)
+  knet.serve(kdirectory.port, handleRequest)
 end
 
 function stop()
-  knet.unlisten(args.listenPort)
+  knet.unlisten(kdirectory.port)
 end
 
 function dump()
