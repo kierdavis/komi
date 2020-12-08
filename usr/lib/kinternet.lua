@@ -91,9 +91,9 @@ function kinternet.openRemote(req)
         waitForEvent()
       end
       if sharedState.chunkQueueHead < sharedState.chunkQueueTail then
-        local chunk = chunkQueue[chunkQueueHead]
-        chunkQueue[chunkQueueHead] = nil
-        chunkQueueHead = chunkQueueHead + 1
+        local chunk = sharedState.chunkQueue[sharedState.chunkQueueHead]
+        sharedState.chunkQueue[sharedState.chunkQueueHead] = nil
+        sharedState.chunkQueueHead = sharedState.chunkQueueHead + 1
         if not chunk then
           error("didn't expect chunk to be nil")
         end
