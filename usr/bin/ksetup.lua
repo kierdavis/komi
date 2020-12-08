@@ -173,6 +173,19 @@ local function main()
   -- bootloaderFile:close()
   -- component.eeprom.set(bootloaderText)
 
+  -- Register ourselves with the directory server.
+  local result, kdirectory = pcall(require, "kdirectory")
+  if result then
+    local result, message = pcall(kdirectory.registerSelf, 5)
+    if not result then
+      io.stderr:write("[E] failed to register to directory: ", message, "\n")
+    else
+      io.stderr:write("[D] successfully registered to directory\n")
+    end
+  else
+    io.stderr:write("[W] kdirectory library not found, skipping registration: ", kdirectory, "\n")
+  end
+
   -- If the filesystem we were configuring isn't the one we're currently running, reboot into it.
   if rootFsPath ~= "/" then
     io.write("Rebooting into installed OS.\n")
